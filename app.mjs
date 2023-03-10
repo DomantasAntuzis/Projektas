@@ -30,6 +30,17 @@ io.on("connection", function (socket) {
 
   socket.emit("fen", game.fen());
 
+  if (games.get(gameId).players == null) {
+    games.get(gameId).players = [];
+  }
+  games.get(gameId).players.push(socket.id);
+  if (games.get(gameId).players.length === 2) {
+    const color = Math.random() < 0.5 ? "w" : "b";
+    games.get(gameId).players.forEach((player, index) => {
+      io.to(player).emit("color", index === 0 ? color : color === "w" ? "b" : "w");
+    });
+  }
+
   socket.on("move", function (data) {
     console.log(`Move received from client: ${JSON.stringify(data)}`);
 
@@ -37,6 +48,7 @@ io.on("connection", function (socket) {
 
     if (move) {
       io.emit("fen", game.fen());
+      io.emit("turn", game.turn());
     }
   });
 });

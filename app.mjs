@@ -19,36 +19,52 @@ app.use(express.static("public"));
 const games = new Map();
 
 io.on("connection", function (socket) {
-  const gameId = socket.handshake.query.gameId;
+  let gameId = socket.handshake.query.gameId;
   console.log(`Client connected to game ${gameId}`);
 
-  if (!games.has(gameId)) {
-    games.set(gameId, new Chess());
+  let game = null;
+  let players = null;
+
+  // Find the first available game room
+  for (const [key, value] of games.entries()) {
+    if (value.players.length < 2) {
+      gameId = key;
+      game = value.game;
+      players = value.players;
+      break;
+    }
   }
 
-  const game = games.get(gameId);
+  // If no available game rooms, create a new one
+  if (!game) {
+    gameId = Math.random().toString(36).substr(2, 5);
+    game = new Chess();
+    games.set(gameId, { game, players: [] });
+    players = games.get(gameId).players;
+  }
 
+  socket.join(gameId);
+  socket.emit("gameId", gameId);
   socket.emit("fen", game.fen());
 
-  if (games.get(gameId).players == null) {
-    games.get(gameId).players = [];
+  if (players.length === 0) {
+    players.push(socket.id);
+    socket.emit("color", "w");
+  } else if (players.length === 1) {
+    players.push(socket.id);
+    const color = players[0] === socket.id ? "w" : "b";
+    socket.emit("color", color);
+    io.to(players[0]).emit("color", color === "w" ? "b" : "w");
   }
-  games.get(gameId).players.push(socket.id);
-  if (games.get(gameId).players.length === 2) {
-    const color = Math.random() < 0.5 ? "w" : "b";
-    games.get(gameId).players.forEach((player, index) => {
-      io.to(player).emit("color", index === 0 ? color : color === "w" ? "b" : "w");
-    });
-  }
-
+  
   socket.on("move", function (data) {
     console.log(`Move received from client: ${JSON.stringify(data)}`);
 
     const move = game.move(data);
 
     if (move) {
-      io.emit("fen", game.fen());
-      io.emit("turn", game.turn());
+      io.to(gameId).emit("fen", game.fen());
+      io.to(gameId).emit("turn", game.turn());
     }
   });
 });
@@ -56,4 +72,3 @@ io.on("connection", function (socket) {
 http.listen(3001, function () {
   console.log("Server listening on port 3001");
 });
-

@@ -52,9 +52,13 @@ io.on("connection", function (socket) {
     socket.emit("color", "w");
   } else if (players.length === 1) {
     players.push(socket.id);
-    const color = players[0] === socket.id ? "w" : "b";
-    socket.emit("color", color);
-    io.to(players[0]).emit("color", color === "w" ? "b" : "w");
+    socket.emit("color", "b");
+    socket.emit("turn", "w");
+    io.to(players[0]).emit("turn", "w");
+    // const color = players[0] === socket.id ? "w" : "b";
+    // socket.emit("color", color);
+    //?
+    // io.to(players[0]).emit("color", color === "w" ? "b" : "w");
   }
   
   socket.on("move", function (data) {
@@ -67,6 +71,10 @@ io.on("connection", function (socket) {
       io.to(gameId).emit("turn", game.turn());
     }
   });
+
+  socket.on("timeout", function (data) {
+    console.log(data);
+  })
 });
 
 http.listen(3001, function () {

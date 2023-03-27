@@ -24,6 +24,8 @@ io.on("connection", function (socket) {
 
   let game = null;
   let players = null;
+  let time = null;
+  let turn = null;
 
   // Find the first available game room
   for (const [key, value] of games.entries()) {
@@ -31,6 +33,8 @@ io.on("connection", function (socket) {
       gameId = key;
       game = value.game;
       players = value.players;
+      time = value.time;
+      turn = value.turn;
       break;
     }
   }
@@ -39,8 +43,10 @@ io.on("connection", function (socket) {
   if (!game) {
     gameId = Math.random().toString(36).substr(2, 5);
     game = new Chess();
-    games.set(gameId, { game, players: [] });
+    games.set(gameId, { game, players: [], time: [300, 300, 0], turn: "w" });
     players = games.get(gameId).players;
+    time = games.get(gameId).time;
+    turn = games.get(gameId).turn;
   }
 
   socket.join(gameId);
@@ -55,6 +61,12 @@ io.on("connection", function (socket) {
     socket.emit("color", "b");
     socket.emit("turn", "w");
     io.to(players[0]).emit("turn", "w");
+
+    // let dt = new Date();
+    time[2] = Date.now(); 
+    socket.emit("time", {"w":time[0], "b":time[1]});
+    io.to(players[0]).emit("time", {"w":time[0], "b":time[1]});
+    
     // const color = players[0] === socket.id ? "w" : "b";
     // socket.emit("color", color);
     //?
@@ -69,16 +81,41 @@ io.on("connection", function (socket) {
     if (move) {
       io.to(gameId).emit("fen", game.fen());
       io.to(gameId).emit("turn", game.turn());
+
+      // console.log("move");
+      // console.log(move);
+      if (move.color == "w") {
+        time[0] -= Math.floor((Date.now() - time[2]) / 1000); 
+        turn = "b";
+      } else {
+        time[1] -= Math.floor((Date.now() - time[2]) / 1000); 
+        turn = "w";
+      }
+      time[2] = Date.now();
+
+      io.to(gameId).emit("time", {"w":time[0], "b":time[1]});
     }
   });
+
+  socket.on("updateTime", function (data) {
+    console.log("updateTime");
+    // console.log(game);
+    if (turn == "w") {
+      io.to(gameId).emit("time", {"w":time[0] - Math.floor((Date.now() - time[2]) / 1000), "b":time[1]});
+    } else {
+      io.to(gameId).emit("time", {"w":time[0], "b":time[1] - Math.floor((Date.now() - time[2]) / 1000)});
+    }
+  })
 
   socket.on("timeout", function (data) {
     console.log(data);
   })
 
-socket.on("timer", (timer) => {
-  socket.broadcast.emit("timer", timer);
-});
+  socket.on("timer", (timer) => {
+    socket.broadcast.emit("timer", timer);
+  });
+
+
 
 });
 

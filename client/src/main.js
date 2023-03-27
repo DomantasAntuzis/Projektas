@@ -30,41 +30,6 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!socket) {
-      return;
-    }
-    socket.on("color", (color) => {
-      console.log(`Received color from server: ${color}`);
-      setPlayerColor(color);
-    });
-
-    socket.on("fen", (fen) => {
-      console.log(`Received fen from server: ${fen}`);
-      setGame(new Chess(fen));
-      setPosition(fen);
-    });
-
-    socket.on("turn", (turn) => {
-      console.log(`Received turn from server: ${turn}`);
-      setTurn(turn);
-      if (turn === "w") {
-        setTurnText("baltųjų ėjimas");
-      } else if (turn === "b") {
-        setTurnText("juodųjų ėjimas");
-      }
-    });
-      socket.on("timeout", ({ winner }) => {
-    if (winner === playerColor) {
-      setWinnerText("Laikas baigėsi. Jūs laimėjote!");
-    } else {
-      setWinnerText("Laikas baigėsi. Jūs pralaimėjote.");
-    }
-  });
-
-    console.log("Waiting for color from server...");
-  }, [socket, playerColor]);
-
-  useEffect(() => {
     const interval = setInterval(() => {
       if (turn === "w" && whiteTime > 0) {
         setWhiteTime((whiteTime) => whiteTime - 1);
@@ -86,6 +51,60 @@ function App() {
       clearInterval(interval);
     };
   }, [turn, whiteTime, blackTime]);
+
+
+  
+  useEffect(() => {    
+    window.addEventListener("focus", () => {socket.emit("updateTime", "");});
+    window.addEventListener("blur", () => {socket.emit("updateTime", "");});
+    return () => {
+      window.removeEventListener("focus", () => {socket.emit("updateTime", "");});
+      window.removeEventListener("blur", () => {socket.emit("updateTime", "");});
+    };
+  }, [turn]);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+    socket.on("color", (color) => {
+      console.log(`Received color from server: ${color}`);
+      setPlayerColor(color);
+    });
+
+    socket.on("fen", (fen) => {
+      console.log(`Received fen from server: ${fen}`);
+      setGame(new Chess(fen));
+      setPosition(fen);
+    });
+
+    socket.on("time", (time) => {
+      setWhiteTime(time.w);
+      setBlackTime(time.b);
+    });
+
+    socket.on("turn", (turn) => {
+      console.log(`Received turn from server: ${turn}`);
+      setTurn(turn);
+      if (turn === "w") {
+        setTurnText("baltųjų ėjimas");
+      } else if (turn === "b") {
+        setTurnText("juodųjų ėjimas");
+      }
+    });
+
+    socket.on("timeout", ({ winner }) => {
+      if (winner === playerColor) {
+        setWinnerText("Laikas baigėsi. Jūs laimėjote!");
+      } else {
+        setWinnerText("Laikas baigėsi. Jūs pralaimėjote.");
+      }
+    });
+
+    console.log("Waiting for color from server...");
+  }, [socket, turn, playerColor, whiteTime, blackTime]);
+
+  
 
   function handleMove(from, to) {
     if (game.turn() === playerColor) {

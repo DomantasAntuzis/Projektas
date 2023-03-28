@@ -25,7 +25,6 @@ io.on("connection", function (socket) {
   let game = null;
   let players = null;
   let time = null;
-  let turn = null;
 
   // Find the first available game room
   for (const [key, value] of games.entries()) {
@@ -34,7 +33,6 @@ io.on("connection", function (socket) {
       game = value.game;
       players = value.players;
       time = value.time;
-      turn = value.turn;
       break;
     }
   }
@@ -43,15 +41,32 @@ io.on("connection", function (socket) {
   if (!game) {
     gameId = Math.random().toString(36).substr(2, 5);
     game = new Chess();
-    games.set(gameId, { game, players: [], time: [300, 300, 0], turn: "w" });
+    games.set(gameId, { game, players: [], time: [300, 300, 0, "w"], turn: "w" });
     players = games.get(gameId).players;
     time = games.get(gameId).time;
-    turn = games.get(gameId).turn;
   }
 
   socket.join(gameId);
   socket.emit("gameId", gameId);
   socket.emit("fen", game.fen());
+
+  // socket.on("disconnect", function () {
+  //   console.log(`Player ${socket.id} disconnected from game ${gameId}`);
+
+  //   const index = players.indexOf(socket.id);
+  //   if (index !== -1) {
+  //     players.splice(index, 1);
+  //   }
+
+  //   // If one player left, end the game and delete the game room
+  //   if (players.length === 1) {
+  //     io.to(gameId).emit("endGame", {
+  //       result: "abandoned",
+  //       winner: turn === "w" ? "b" : "w",
+  //     });
+  //     games.delete(gameId);
+  //   }
+  // });
 
   if (players.length === 0) {
     players.push(socket.id);
@@ -59,6 +74,7 @@ io.on("connection", function (socket) {
   } else if (players.length === 1) {
     players.push(socket.id);
     socket.emit("color", "b");
+
     socket.emit("turn", "w");
     io.to(players[0]).emit("turn", "w");
 
@@ -78,10 +94,11 @@ io.on("connection", function (socket) {
 
       if (move.color == "w") {
         time[0] -= Math.floor((Date.now() - time[2]) / 1000);
-        turn = "b";
+        time[3] = "b";
+
       } else {
         time[1] -= Math.floor((Date.now() - time[2]) / 1000);
-        turn = "w";
+        time[3] = "w";
       }
       time[2] = Date.now();
 
@@ -92,15 +109,17 @@ io.on("connection", function (socket) {
   socket.on("updateTime", function (data) {
     console.log("updateTime");
     // console.log(game);
-    if (turn == "w") {
+    if (time[3] == "w") {
       io.to(gameId).emit("time", {
         w: time[0] - Math.floor((Date.now() - time[2]) / 1000),
         b: time[1],
+        turn: time[3]
       });
     } else {
       io.to(gameId).emit("time", {
         w: time[0],
         b: time[1] - Math.floor((Date.now() - time[2]) / 1000),
+        turn: time[3]
       });
     }
   });

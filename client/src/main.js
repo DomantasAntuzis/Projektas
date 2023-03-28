@@ -52,21 +52,19 @@ function App() {
     };
   }, [turn, whiteTime, blackTime]);
 
-  useEffect(() => {    
-    const onFocus = () => { socket.emit("updateTime", ""); };
-    const onBlur = () => { socket.emit("updateTime", ""); };
+  // useEffect(() => {    
+  //   const onFocus = () => { socket.emit("updateTime", true); };
+  //   // const onBlur = () => { socket.emit("updateTime", ""); };
   
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("blur", onBlur);
+  //   window.addEventListener("focus", onFocus);
+  //   // window.addEventListener("blur", onBlur);
   
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("blur", onBlur);
-    };
-  }, []);
+  //   return () => {
+  //     window.removeEventListener("focus", onFocus);
+  //     // window.removeEventListener("blur", onBlur);
+  //   };
+  // }, []);
   
-  
-
   useEffect(() => {
     if (!socket) {
       return;
@@ -97,6 +95,17 @@ function App() {
       }
     });
 
+    const onFocus = () => { socket.emit("updateTime", 1); };
+    // const onBlur = () => { socket.emit("updateTime", ""); };
+  
+    window.addEventListener("focus", onFocus);
+    // window.addEventListener("blur", onBlur);
+  
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      // window.removeEventListener("blur", onBlur);
+    };
+
     socket.on("timeout", ({ winner }) => {
       if (winner === playerColor) {
         setWinnerText("Laikas baigėsi. Jūs laimėjote!");
@@ -104,8 +113,6 @@ function App() {
         setWinnerText("Laikas baigėsi. Jūs pralaimėjote.");
       }
     });
-
-    console.log("Waiting for color from server...");
   }, [socket, turn, playerColor, whiteTime, blackTime]);
 
   

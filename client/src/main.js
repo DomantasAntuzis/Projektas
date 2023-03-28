@@ -52,16 +52,20 @@ function App() {
     };
   }, [turn, whiteTime, blackTime]);
 
-
-  
   useEffect(() => {    
-    window.addEventListener("focus", () => {socket.emit("updateTime", "");});
-    window.addEventListener("blur", () => {socket.emit("updateTime", "");});
+    const onFocus = () => { socket.emit("updateTime", ""); };
+    const onBlur = () => { socket.emit("updateTime", ""); };
+  
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("blur", onBlur);
+  
     return () => {
-      window.removeEventListener("focus", () => {socket.emit("updateTime", "");});
-      window.removeEventListener("blur", () => {socket.emit("updateTime", "");});
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
     };
-  }, [turn]);
+  }, []);
+  
+  
 
   useEffect(() => {
     if (!socket) {

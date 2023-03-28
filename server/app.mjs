@@ -62,17 +62,11 @@ io.on("connection", function (socket) {
     socket.emit("turn", "w");
     io.to(players[0]).emit("turn", "w");
 
-    // let dt = new Date();
-    time[2] = Date.now(); 
-    socket.emit("time", {"w":time[0], "b":time[1]});
-    io.to(players[0]).emit("time", {"w":time[0], "b":time[1]});
-    
-    // const color = players[0] === socket.id ? "w" : "b";
-    // socket.emit("color", color);
-    //?
-    // io.to(players[0]).emit("color", color === "w" ? "b" : "w");
+    time[2] = Date.now();
+    socket.emit("time", { w: time[0], b: time[1] });
+    io.to(players[0]).emit("time", { w: time[0], b: time[1] });
   }
-  
+
   socket.on("move", function (data) {
     console.log(`Move received from client: ${JSON.stringify(data)}`);
 
@@ -82,18 +76,16 @@ io.on("connection", function (socket) {
       io.to(gameId).emit("fen", game.fen());
       io.to(gameId).emit("turn", game.turn());
 
-      // console.log("move");
-      // console.log(move);
       if (move.color == "w") {
-        time[0] -= Math.floor((Date.now() - time[2]) / 1000); 
+        time[0] -= Math.floor((Date.now() - time[2]) / 1000);
         turn = "b";
       } else {
-        time[1] -= Math.floor((Date.now() - time[2]) / 1000); 
+        time[1] -= Math.floor((Date.now() - time[2]) / 1000);
         turn = "w";
       }
       time[2] = Date.now();
 
-      io.to(gameId).emit("time", {"w":time[0], "b":time[1]});
+      io.to(gameId).emit("time", { w: time[0], b: time[1] });
     }
   });
 
@@ -101,22 +93,25 @@ io.on("connection", function (socket) {
     console.log("updateTime");
     // console.log(game);
     if (turn == "w") {
-      io.to(gameId).emit("time", {"w":time[0] - Math.floor((Date.now() - time[2]) / 1000), "b":time[1]});
+      io.to(gameId).emit("time", {
+        w: time[0] - Math.floor((Date.now() - time[2]) / 1000),
+        b: time[1],
+      });
     } else {
-      io.to(gameId).emit("time", {"w":time[0], "b":time[1] - Math.floor((Date.now() - time[2]) / 1000)});
+      io.to(gameId).emit("time", {
+        w: time[0],
+        b: time[1] - Math.floor((Date.now() - time[2]) / 1000),
+      });
     }
-  })
+  });
 
   socket.on("timeout", function (data) {
     console.log(data);
-  })
+  });
 
   socket.on("timer", (timer) => {
     socket.broadcast.emit("timer", timer);
   });
-
-
-
 });
 
 http.listen(3001, function () {

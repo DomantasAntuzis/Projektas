@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import io from "socket.io-client";
 import { Chess } from "chess.js";
 import Timer from "./timer";
-import "./style.css"
+import "./style.css";
 
 function App() {
   const [position, setPosition] = useState("start");
@@ -34,17 +34,17 @@ function App() {
       if (turn === "w" && whiteTime > 0) {
         setWhiteTime((whiteTime) => whiteTime - 1);
         if (whiteTime === 1) {
-          socket.emit("timeout", {winner: "b"})
-          clearInterval(interval)
+          socket.emit("timeout", { winner: "b" });
+          clearInterval(interval);
         }
       } else if (turn === "b" && blackTime > 0) {
         setBlackTime((blackTime) => blackTime - 1);
         if (blackTime === 1) {
-          socket.emit("timeout", {winner: "w"})
-          clearInterval(interval)
+          socket.emit("timeout", { winner: "w" });
+          clearInterval(interval);
         }
       } else {
-        clearInterval(interval)
+        clearInterval(interval);
       }
     }, 1000);
     return () => {
@@ -52,19 +52,6 @@ function App() {
     };
   }, [turn, whiteTime, blackTime]);
 
-  // useEffect(() => {    
-  //   const onFocus = () => { socket.emit("updateTime", true); };
-  //   // const onBlur = () => { socket.emit("updateTime", ""); };
-  
-  //   window.addEventListener("focus", onFocus);
-  //   // window.addEventListener("blur", onBlur);
-  
-  //   return () => {
-  //     window.removeEventListener("focus", onFocus);
-  //     // window.removeEventListener("blur", onBlur);
-  //   };
-  // }, []);
-  
   useEffect(() => {
     if (!socket) {
       return;
@@ -95,27 +82,24 @@ function App() {
       }
     });
 
-    const onFocus = () => { socket.emit("updateTime", 1); };
-    // const onBlur = () => { socket.emit("updateTime", ""); };
-  
-    window.addEventListener("focus", onFocus);
-    // window.addEventListener("blur", onBlur);
-  
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      // window.removeEventListener("blur", onBlur);
-    };
-
     socket.on("timeout", ({ winner }) => {
+      console.log(winner);
       if (winner === playerColor) {
         setWinnerText("Laikas baigėsi. Jūs laimėjote!");
       } else {
         setWinnerText("Laikas baigėsi. Jūs pralaimėjote.");
       }
     });
-  }, [socket, turn, playerColor, whiteTime, blackTime]);
+    const onFocus = () => {
+      socket.emit("updateTime", 1);
+    };
 
-  
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [socket, turn, playerColor, whiteTime, blackTime]);
 
   function handleMove(from, to) {
     if (game.turn() === playerColor) {
@@ -142,29 +126,27 @@ function App() {
     }
   }
 
-  return(
-    <div
-      className="main"
-    >
+  return (
+    <div className="main">
       <div className="chessboard-container">
-      <h3>{winnerText}</h3>
-      <h3>{turnText}</h3>
-      <p>
-        Playing as{" "}
-        {playerColor ? (playerColor === "w" ? "white" : "black") : "unknown"}
-      </p>
-      <Chessboard
-        id="Configurable Board"
-        position={position}
-        onPieceDrop={(from, to) => {
-          if (game.turn() === turn && playerColor === game.turn()) {
-            handleMove(from, to);
-          }
-        }}
-      />
+        <h3>{winnerText}</h3>
+        <h3>{turnText}</h3>
+        <p>
+          Playing as{" "}
+          {playerColor ? (playerColor === "w" ? "white" : "black") : "unknown"}
+        </p>
+        <Chessboard
+          id="Configurable Board"
+          position={position}
+          onPieceDrop={(from, to) => {
+            if (game.turn() === turn && playerColor === game.turn()) {
+              handleMove(from, to);
+            }
+          }}
+        />
       </div>
-       <div className="timer-container">
-      <Timer className="timer" wtime={whiteTime} btime={blackTime}></Timer>
+      <div className="timer-container">
+        <Timer className="timer" wtime={whiteTime} btime={blackTime}></Timer>
       </div>
     </div>
   );

@@ -1,8 +1,15 @@
 FROM node:18-alpine
-WORKDIR /server
+
+WORKDIR /usr/app
+
 COPY package*.json ./
-COPY package-lock.json ./
-COPY . .
+
+RUN npm install -g nodemon
+
 RUN npm install
-CMD ["node", "app.mjs"]
+
+COPY . .
+
 EXPOSE 3001
+
+CMD ["npm", "start"]

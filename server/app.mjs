@@ -41,7 +41,12 @@ io.on("connection", function (socket) {
   if (!game) {
     gameId = Math.random().toString(36).substr(2, 5);
     game = new Chess();
-    games.set(gameId, { game, players: [], time: [300, 300, 0, "w"], turn: "w" });
+    games.set(gameId, {
+      game,
+      players: [],
+      time: [300, 300, 0, "w"],
+      turn: "w",
+    });
     players = games.get(gameId).players;
     time = games.get(gameId).time;
   }
@@ -95,7 +100,6 @@ io.on("connection", function (socket) {
       if (move.color == "w") {
         time[0] -= Math.floor((Date.now() - time[2]) / 1000);
         time[3] = "b";
-
       } else {
         time[1] -= Math.floor((Date.now() - time[2]) / 1000);
         time[3] = "w";
@@ -113,24 +117,35 @@ io.on("connection", function (socket) {
       io.to(gameId).emit("time", {
         w: time[0] - Math.floor((Date.now() - time[2]) / 1000),
         b: time[1],
-        turn: time[3]
+        turn: time[3],
       });
     } else {
       io.to(gameId).emit("time", {
         w: time[0],
         b: time[1] - Math.floor((Date.now() - time[2]) / 1000),
-        turn: time[3]
+        turn: time[3],
       });
     }
   });
 
   socket.on("timeout", function (data) {
     console.log(data);
+    socket.emit("timeout", data.winner);
   });
+});
 
-  socket.on("timer", (timer) => {
-    socket.broadcast.emit("timer", timer);
-  });
+app.get("/", (req, res) => {
+  res.send("titulinis");
+});
+
+app.get("/test", (req, res) => {
+  res.send("test");
+});
+app.get("/test2", (req, res) => {
+  res.send("test2");
+});
+app.get("/test3", (req, res) => {
+  res.send("test3");
 });
 
 http.listen(3001, function () {

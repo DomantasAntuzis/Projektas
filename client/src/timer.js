@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 export default (props) => {
     let wtime = props.wtime;
     let btime = props.btime;

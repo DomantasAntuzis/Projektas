@@ -15,6 +15,7 @@ function App() {
   const [blackTime, setBlackTime] = useState(300);
   const [turnText, setTurnText] = useState("waiting for another player");
   const [winnerText, setWinnerText] = useState("");
+  const [timerExpired, setTimerExpired] = useState(false);
 
   useEffect(() => {
     const newSocket = io("http://localhost:3001", {
@@ -29,29 +30,39 @@ function App() {
     };
   }, []);
 
+
+  // timer
   useEffect(() => {
     const interval = setInterval(() => {
       if (turn === "w" && whiteTime > 0) {
         setWhiteTime((whiteTime) => whiteTime - 1);
         if (whiteTime === 1) {
-          socket.emit("timeout", { winner: "b" });
+          setWinnerText("Game over! Blacks won");
           clearInterval(interval);
+          setTimerExpired(true);
         }
       } else if (turn === "b" && blackTime > 0) {
         setBlackTime((blackTime) => blackTime - 1);
         if (blackTime === 1) {
-          socket.emit("timeout", { winner: "w" });
+          setWinnerText("Game over! Whites won");
           clearInterval(interval);
+          setTimerExpired(true);
         }
       } else {
         clearInterval(interval);
       }
     }, 1000);
+
+    if (game.isCheckmate()) {
+    clearInterval(interval)
+    }
+
     return () => {
       clearInterval(interval);
     };
-  }, [turn, whiteTime, blackTime]);
+  }, [turn, whiteTime, blackTime, socket, game]);
 
+  //color assignment, fen, time, turn
   useEffect(() => {
     if (!socket) {
       return;
@@ -76,20 +87,16 @@ function App() {
       console.log(`Received turn from server: ${turn}`);
       setTurn(turn);
       if (turn === "w") {
-        setTurnText("baltųjų ėjimas");
+        setTurnText("whites move");
       } else if (turn === "b") {
-        setTurnText("juodųjų ėjimas");
+        setTurnText("blacks move");
       }
     });
 
-    socket.on("timeout", ({ winner }) => {
-      console.log(winner);
-      if (winner === playerColor) {
-        setWinnerText("Laikas baigėsi. Jūs laimėjote!");
-      } else {
-        setWinnerText("Laikas baigėsi. Jūs pralaimėjote.");
-      }
-    });
+    if (timerExpired) {
+      return;
+    }
+
     const onFocus = () => {
       socket.emit("updateTime", 1);
     };
@@ -100,6 +107,20 @@ function App() {
       window.removeEventListener("focus", onFocus);
     };
   }, [socket, turn, playerColor, whiteTime, blackTime]);
+
+  //text
+  useEffect(() => {
+    if (game.isGameOver()) {
+      setTimerExpired(true);
+      if (game.isCheckmate()) {
+        setWinnerText(
+          `Checkmate! ${game.turn() === "w" ? "Black" : "White"} wins!`
+        );
+      } else {
+        setWinnerText("Draw!");
+      }
+    }
+  }, [game]);
 
   function handleMove(from, to) {
     if (game.turn() === playerColor) {
@@ -116,6 +137,12 @@ function App() {
             game.put({ type: "q", color: move.color }, to);
           }
         }
+        if (
+          (turn === "w" && whiteTime === 0) ||
+          (turn === "b" && blackTime === 0)
+        ) {
+          return;
+        }
         socket.emit("move", {
           from: from,
           to: to,
@@ -129,8 +156,7 @@ function App() {
   return (
     <div className="main">
       <div className="chessboard-container">
-        <h3>{winnerText}</h3>
-        <h3>{turnText}</h3>
+        {winnerText ? <h3>{winnerText}</h3> : <h3>{turnText}</h3>}
         <p>
           Playing as{" "}
           {playerColor ? (playerColor === "w" ? "white" : "black") : "unknown"}

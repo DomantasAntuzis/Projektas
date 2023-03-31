@@ -55,24 +55,6 @@ io.on("connection", function (socket) {
   socket.emit("gameId", gameId);
   socket.emit("fen", game.fen());
 
-  // socket.on("disconnect", function () {
-  //   console.log(`Player ${socket.id} disconnected from game ${gameId}`);
-
-  //   const index = players.indexOf(socket.id);
-  //   if (index !== -1) {
-  //     players.splice(index, 1);
-  //   }
-
-  //   // If one player left, end the game and delete the game room
-  //   if (players.length === 1) {
-  //     io.to(gameId).emit("endGame", {
-  //       result: "abandoned",
-  //       winner: turn === "w" ? "b" : "w",
-  //     });
-  //     games.delete(gameId);
-  //   }
-  // });
-
   if (players.length === 0) {
     players.push(socket.id);
     socket.emit("color", "w");
@@ -112,7 +94,6 @@ io.on("connection", function (socket) {
 
   socket.on("updateTime", function (data) {
     console.log("updateTime");
-    // console.log(game);
     if (time[3] == "w") {
       io.to(gameId).emit("time", {
         w: time[0] - Math.floor((Date.now() - time[2]) / 1000),
@@ -127,25 +108,6 @@ io.on("connection", function (socket) {
       });
     }
   });
-
-  socket.on("timeout", function (data) {
-    console.log(data);
-    socket.emit("timeout", data.winner);
-  });
-});
-
-app.get("/", (req, res) => {
-  res.send("titulinis");
-});
-
-app.get("/test", (req, res) => {
-  res.send("test");
-});
-app.get("/test2", (req, res) => {
-  res.send("test2");
-});
-app.get("/test3", (req, res) => {
-  res.send("test3");
 });
 
 http.listen(3001, function () {

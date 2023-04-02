@@ -73,9 +73,14 @@ io.on("connection", function (socket) {
   socket.on("move", function (data) {
     console.log(`Move received from client: ${JSON.stringify(data)}`);
 
+    if (data.promotion) {
+      data.promotion = data.promotion.toLowerCase();
+    }
+
     const move = game.move(data);
 
     if (move) {
+      
       io.to(gameId).emit("fen", game.fen());
       io.to(gameId).emit("turn", game.turn());
 

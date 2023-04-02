@@ -132,9 +132,9 @@ function App() {
             promotedTo &&
             ["q", "r", "b", "n"].includes(promotedTo.toLowerCase())
           ) {
-            game.put({ type: promotedTo.toLowerCase(), color: move.color }, to);
+            move.promotion = promotedTo.toLowerCase();
           } else {
-            game.put({ type: "q", color: move.color }, to);
+            move.promotion = "q";
           }
         }
         if (
@@ -146,6 +146,7 @@ function App() {
         socket.emit("move", {
           from: from,
           to: to,
+          promotion: move.promotion
         });
         setPosition(game.fen());
         setTurn(game.turn());

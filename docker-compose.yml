@@ -9,7 +9,7 @@ services:
       - ./server:/usr/app
       - /usr/app/node_modules
     # command: /usr/app/node_modules/.bin/nodemon app.mjs
-    command: nodemon app.mjs
+    command: nodemon -L app.mjs
   client:
     build: ./client
     command: npm start

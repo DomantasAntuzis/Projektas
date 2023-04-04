@@ -30,7 +30,6 @@ function App() {
     };
   }, []);
 
-
   // timer
   useEffect(() => {
     const interval = setInterval(() => {
@@ -54,7 +53,11 @@ function App() {
     }, 1000);
 
     if (game.isCheckmate()) {
-    clearInterval(interval)
+      clearInterval(interval);
+    }
+
+    if (timerExpired) {
+      clearInterval(interval);
     }
 
     return () => {
@@ -83,6 +86,11 @@ function App() {
       setBlackTime(time.b);
     });
 
+    socket.on("opponentDisconnected", () => {
+      setTurnText("Your opponent has disconnected");
+      setTimerExpired(true);
+    });
+
     socket.on("turn", (turn) => {
       console.log(`Received turn from server: ${turn}`);
       setTurn(turn);
@@ -101,10 +109,17 @@ function App() {
       socket.emit("updateTime", 1);
     };
 
+    const onUnload = () => {
+      socket.disconnect();
+      socket.emit("disconnect");
+    };
+
     window.addEventListener("focus", onFocus);
+    window.addEventListener("unload", onUnload);
 
     return () => {
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("unload", onUnload);
     };
   }, [socket, turn, playerColor, whiteTime, blackTime]);
 
@@ -146,7 +161,7 @@ function App() {
         socket.emit("move", {
           from: from,
           to: to,
-          promotion: move.promotion
+          promotion: move.promotion,
         });
         setPosition(game.fen());
         setTurn(game.turn());
@@ -175,6 +190,7 @@ function App() {
       <div className="timer-container">
         <Timer className="timer" wtime={whiteTime} btime={blackTime}></Timer>
       </div>
+      {/* <div>Bandymas</div> */}
     </div>
   );
 }

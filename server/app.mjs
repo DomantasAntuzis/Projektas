@@ -80,7 +80,6 @@ io.on("connection", function (socket) {
     const move = game.move(data);
 
     if (move) {
-      
       io.to(gameId).emit("fen", game.fen());
       io.to(gameId).emit("turn", game.turn());
 
@@ -105,6 +104,7 @@ io.on("connection", function (socket) {
         b: time[1],
         turn: time[3],
       });
+      console.log(games);
     } else {
       io.to(gameId).emit("time", {
         w: time[0],
@@ -113,7 +113,26 @@ io.on("connection", function (socket) {
       });
     }
   });
+
+  socket.on("disconnect", function () {
+    console.log(`Client disconnected from game ${gameId}`);
+
+    // Remove the player from the game
+    const gameData = games.get(gameId);
+    const players = gameData.players;
+    const index = players.indexOf(socket.id);
+    if (index !== -1) {
+      players.splice(index, 1);
+      io.to(players[0]).emit("opponentDisconnected");
+      games.delete(gameId);
+    }
+    // console.log(games);
+  });
 });
+
+app.get('/', (req, res) => {
+  res.send("titulinis")
+})
 
 http.listen(3001, function () {
   console.log("Server listening on port 3001");
